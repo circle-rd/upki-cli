@@ -7,7 +7,7 @@ fi
 
 echo -e "\t\t..:: uPKI Client ::.."
 # Set default VARS
-RA_URL='certificates.prohacktive.io' # Should be remove in public release !!! ;)
+RA_URL='certificates.example.com' # Set your RA URL here
 CERT_PATH="${HOME}/.upki"
 
 if [[ ! -d ${CERT_PATH} ]]; then
