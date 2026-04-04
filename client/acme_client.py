@@ -111,9 +111,13 @@ class AcmeClient:
 
         if os.path.isfile(self._key_path):
             with open(self._key_path, "rb") as fh:
-                self._private_key = serialization.load_pem_private_key(
-                    fh.read(), password=None
+                loaded = serialization.load_pem_private_key(fh.read(), password=None)
+            if not isinstance(loaded, ec.EllipticCurvePrivateKey):
+                raise TypeError(
+                    f"Expected EC private key in {self._key_path!r}, "
+                    f"got {type(loaded).__name__}"
                 )
+            self._private_key = loaded
         else:
             self._private_key = ec.generate_private_key(ec.SECP256R1())
             pem = self._private_key.private_bytes(
@@ -241,6 +245,8 @@ class AcmeClient:
             resp = client.get(f"{self._ra_url}/acme/directory")
             resp.raise_for_status()
             self._directory = resp.json()
+        if not isinstance(self._directory, dict):
+            raise RuntimeError("Invalid directory response")
         return self._directory
 
     def _get_nonce(self) -> str:
