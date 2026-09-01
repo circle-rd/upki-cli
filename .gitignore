@@ -3,3 +3,5 @@
 node_modules
 Pipfile
 Pipfile.lock
+.coverage
+.pytest_cache/

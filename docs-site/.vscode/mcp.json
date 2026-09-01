@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "uPKI CLI Docs (local dev)": {
+      "url": "http://localhost:3000/mcp",
+      "type": "http"
+    },
+    "uPKI CLI Docs": {
+      "url": "https://docs.circle-cyber.com/upki-cli/mcp",
+      "type": "http"
+    }
+  }
+}

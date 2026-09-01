@@ -1,0 +1,12 @@
+{
+  "name": "upki-cli-docs",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "docus": "latest"
+  }
+}
