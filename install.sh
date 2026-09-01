@@ -101,6 +101,44 @@ Persistent=true
 WantedBy=timers.target
 EOT
 
+# Create CRL download service (nginx/apache reload commented out by default)
+sudo tee /etc/systemd/system/upki-cli-crl.service > /dev/null <<EOT
+[Unit]
+Description=µPki client CRL download service
+ConditionACPower=true
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${USERNAME}
+Group=${GROUPNAME}
+Restart=on-failure
+WorkingDirectory=${INSTALL}
+ExecStart=${INSTALL}/client.py --url ${UPKI_URL} crl
+# ExecStartPost=/usr/sbin/service nginx restart
+# ExecStartPost=/usr/sbin/service apache2 restart
+
+[Install]
+WantedBy=upki-cli-crl.timer
+EOT
+
+# Create CRL download service timer (every day @ 2:AM)
+sudo tee /etc/systemd/system/upki-cli-crl.timer > /dev/null <<EOT
+[Unit]
+Description=µPki client CRL download service timer
+
+[Timer]
+OnBootSec=1min
+OnCalendar= *-*-* 02:00:00
+RandomizedDelaySec=1hour
+Unit=upki-cli-crl.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOT
+
 # Reload timers
 sudo systemctl daemon-reload
 
@@ -114,6 +152,18 @@ select yn in "Yes" "No"; do
             sudo service upki-cli start
             break;;
         No ) exit;;
+    esac
+done
+
+echo "Do you wish to activate the CRL download timer on boot?"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes )
+            echo "[+] Activate CRL download service"
+            sudo systemctl enable upki-cli-crl.timer
+            sudo service upki-cli-crl start
+            break;;
+        No ) break;;
     esac
 done
 

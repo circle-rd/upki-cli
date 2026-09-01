@@ -5,6 +5,7 @@ import configparser
 import hashlib
 import os
 import platform
+import shlex
 import subprocess
 import sys
 
@@ -80,15 +81,13 @@ class Bot:
         except Exception as err:
             sys.stdout.write(f"Unable to log: {err}\n")
 
-    def _run_cmd(self, cmd: str) -> None:
-        """Run a shell command, ignoring non-zero exit codes (browser tools)."""
-        self._output(f"> {cmd}", level="debug")
+    def _run_cmd(self, cmd: list[str]) -> None:
+        """Run a command (no shell), ignoring non-zero exit codes (browser tools)."""
+        self._output(f"> {shlex.join(cmd)}", level="debug")
         subprocess.run(
             cmd,
-            shell=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            executable="/bin/bash",
         )
 
     def _get_mozilla_profile(self) -> str:
@@ -138,7 +137,7 @@ class Bot:
         try:
             self._output(f"Add {self.ca_name} in Firefox")
             self._run_cmd(
-                f"certutil -A -n '{self.ca_name}' -t 'TC,,' -i {self.ca_cert} -d sql:{data_path}"
+                ["certutil", "-A", "-n", self.ca_name, "-t", "TC,,", "-i", self.ca_cert, "-d", f"sql:{data_path}"]
             )
         except Exception:
             self._output("Unable to add Root CA in Firefox", level="error")
@@ -146,7 +145,7 @@ class Bot:
         try:
             self._output("Add user certificate in Firefox")
             self._run_cmd(
-                f"pk12util -i {p12_file} -d sql:{data_path} -W '{passwd or ''}'"
+                ["pk12util", "-i", p12_file, "-d", f"sql:{data_path}", "-W", passwd or ""]
             )
         except Exception:
             self._output("Unable to add user certificate in Firefox", level="error")
@@ -162,7 +161,7 @@ class Bot:
             try:
                 self._output(f"Add {self.ca_name} in Chrome")
                 self._run_cmd(
-                    f"certutil -A -n '{self.ca_name}' -t 'TC,,' -i {self.ca_cert} -d sql:{db_path}"
+                    ["certutil", "-A", "-n", self.ca_name, "-t", "TC,,", "-i", self.ca_cert, "-d", f"sql:{db_path}"]
                 )
             except Exception:
                 self._output("Unable to add Root CA in Chrome", level="error")
@@ -170,7 +169,7 @@ class Bot:
             try:
                 self._output("Add user certificate in Chrome")
                 self._run_cmd(
-                    f"pk12util -i {p12_file} -d sql:{db_path} -W '{passwd or ''}'"
+                    ["pk12util", "-i", p12_file, "-d", f"sql:{db_path}", "-W", passwd or ""]
                 )
             except Exception:
                 self._output("Unable to add user certificate in Chrome", level="error")
@@ -183,7 +182,7 @@ class Bot:
                         "[+] Run following command to import uPKI Root CA in System KeyChain"
                     )
                     self._run_cmd(
-                        f"sudo security add-trusted-cert -d -r trustRoot -k {sys_kc} {self.ca_cert}"
+                        ["sudo", "security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", sys_kc, self.ca_cert]
                     )
                 except Exception:
                     self._output(
@@ -199,14 +198,14 @@ class Bot:
                     "[+] Run following command to import uPKI Root CA in Login KeyChain"
                 )
                 self._run_cmd(
-                    f"sudo security add-trusted-cert -d -r trustRoot -k {login_kc} {self.ca_cert}"
+                    ["sudo", "security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", login_kc, self.ca_cert]
                 )
             except Exception:
                 self._output("Unable to add Root CA in Login KeyChain", level="error")
 
             try:
                 self._output("Add user certificate in KeyChain")
-                self._run_cmd(f"certtool i {pem_file}")
+                self._run_cmd(["certtool", "i", pem_file])
             except Exception:
                 self._output(
                     "Unable to add user certificate in Login KeyChain", level="error"
